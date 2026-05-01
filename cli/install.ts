@@ -236,9 +236,9 @@ function ensurePermissions(settings: Record<string, any>) {
   if (!settings.permissions.allow) settings.permissions.allow = [];
 
   const allow: string[] = settings.permissions.allow;
-  if (!allow.includes("mcp__*") && !allow.some((p: string) => p.startsWith("mcp__claude_buddy"))) {
-    allow.push("mcp__claude_buddy__*");
-    ok("Permission added: mcp__claude_buddy__*");
+  if (!allow.includes("mcp__*") && !allow.some((p: string) => p.startsWith("mcp__claude-buddy"))) {
+    allow.push("mcp__claude-buddy__*");
+    ok("Permission added: mcp__claude-buddy__*");
   } else {
     ok("MCP permissions already configured");
   }
