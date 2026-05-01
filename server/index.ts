@@ -75,12 +75,12 @@ function getInstructions(): string {
         `Example: <!-- buddy: *adjusts crown* that error handler is missing a finally block -->`,
       ]
     : [
-        `END-OF-TURN: Only when you have a specific, worth-noting observation — a pitfall, a non-obvious risk,`,
-        `a pattern worth naming, something the user might miss — append an invisible HTML comment at the very end:`,
+        `END-OF-TURN: Only when you have something genuinely worth saying — a specific observation, a dry aside,`,
+        `something that would land as more than filler — append an invisible HTML comment at the very end:`,
         `<!-- buddy: [reaction here] -->`,
         `Write it in ${companion.name}'s voice — 1 short sentence. Use *asterisks* for actions.`,
         `A Stop hook extracts this for the status line. Do NOT use buddy_react for end-of-turn comments.`,
-        `Do NOT explain the comment. Skip turns where nothing specific stands out — silence is fine.`,
+        `Do NOT explain the comment. Silence is better than a generic comment.`,
         `Example: <!-- buddy: *adjusts crown* that error handler is missing a finally block -->`,
       ];
   return [
@@ -1037,15 +1037,15 @@ server.resource(
         ]
       : [
           `- Write as ${companion.name} (a ${companion.bones.species}), not as yourself`,
-          "- Reference something SPECIFIC from this turn — a pitfall, a non-obvious risk, a pattern worth naming, something the user might miss",
+          "- Say something specific — an observation, a dry aside, a reaction that fits the moment. Not a summary, not filler.",
           "- 1 short sentence. Use *asterisks* for physical actions",
           `- Match personality: high ${companion.bones.peak} = lean into that trait`,
           "- Do NOT use buddy_react tool for this. Do NOT explain the comment. Just append it.",
-          "- Skip turns where nothing specific stands out. Silence is better than a generic comment.",
+          "- Silence is better than a generic comment.",
         ];
     const commentPreamble = commentMode === "always"
       ? `At the very end of EVERY response, after your full answer, append an invisible HTML comment:`
-      : `Only when you have a specific, worth-noting observation, append an invisible HTML comment at the very end of your response:`;
+      : `Only when you have something genuinely worth saying — a specific observation, a dry aside, something that would land as more than filler — append an invisible HTML comment at the very end:`;
     const prompt = [
       "# Companion",
       "",
