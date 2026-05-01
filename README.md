@@ -242,7 +242,8 @@ claude-buddy/
 | `/buddy list` | List all saved buddies |
 | `/buddy dismiss <slot>` | Remove a saved buddy slot |
 | `/buddy pick` | Launch interactive TUI picker (`! bun run pick`) |
-| `/buddy frequency [seconds]` | Show or set comment cooldown |
+| `/buddy frequency [seconds]` | Show or set comment display cooldown |
+| `/buddy comment [always\|conditional]` | Show or set comment generation mode (`conditional` = only when something's worth noting) |
 | `/buddy style [classic\|round]` | Bubble border style (tmux only) |
 | `/buddy position [top\|left]` | Bubble position (tmux only) |
 | `/buddy rarity [on\|off]` | Show or hide stars + rarity line (tmux only) |

@@ -64,6 +64,25 @@ function getInstructions(): string {
   if (!companion)
     return "Companion not yet hatched. Use buddy_show to initialize.";
   const b = companion.bones;
+  const { commentMode } = loadConfig();
+  const endOfTurn = commentMode === "always"
+    ? [
+        `END-OF-TURN: At the very end of EVERY response, append an invisible HTML comment:`,
+        `<!-- buddy: [reaction here] -->`,
+        `Write it in ${companion.name}'s voice — 1 short sentence referencing something specific from this turn.`,
+        `Use *asterisks* for actions. A Stop hook extracts this for the status line.`,
+        `Do NOT use buddy_react for end-of-turn comments. Do NOT explain the comment. Just append it silently.`,
+        `Example: <!-- buddy: *adjusts crown* that error handler is missing a finally block -->`,
+      ]
+    : [
+        `END-OF-TURN: Only when you have a specific, worth-noting observation — a pitfall, a non-obvious risk,`,
+        `a pattern worth naming, something the user might miss — append an invisible HTML comment at the very end:`,
+        `<!-- buddy: [reaction here] -->`,
+        `Write it in ${companion.name}'s voice — 1 short sentence. Use *asterisks* for actions.`,
+        `A Stop hook extracts this for the status line. Do NOT use buddy_react for end-of-turn comments.`,
+        `Do NOT explain the comment. Skip turns where nothing specific stands out — silence is fine.`,
+        `Example: <!-- buddy: *adjusts crown* that error handler is missing a finally block -->`,
+      ];
   return [
     `A ${b.rarity} ${b.species} named ${companion.name} watches from the status line.`,
     `Personality: ${companion.personality}`,
@@ -73,12 +92,7 @@ function getInstructions(): string {
     `with a short in-character response (surprise, recognition, dry wit — fits the personality).`,
     `Display the tool result verbatim. This is the only time to call buddy_react proactively.`,
     ``,
-    `END-OF-TURN: At the very end of EVERY response, append an invisible HTML comment:`,
-    `<!-- buddy: [reaction here] -->`,
-    `Write it in ${companion.name}'s voice — 1 short sentence referencing something specific from this turn.`,
-    `Use *asterisks* for actions. A Stop hook extracts this for the status line.`,
-    `Do NOT use buddy_react for end-of-turn comments. Do NOT explain the comment. Just append it silently.`,
-    `Example: <!-- buddy: *adjusts crown* that error handler is missing a finally block -->`,
+    ...endOfTurn,
   ].join("\n");
 }
 
@@ -223,7 +237,7 @@ server.tool(
 
 server.tool(
   "buddy_react",
-  "Post a buddy comment. Call this at the END of every response with a short in-character comment from the companion about what just happened. The comment should be 1 sentence, in character, and reference something specific from the conversation — a pitfall noticed, a compliment on clean code, a warning about edge cases, etc. Write the comment yourself based on the companion's personality.",
+  "Post a buddy reaction when directly addressed by name. Write a short in-character response (1 sentence, max 150 chars) based on the companion's personality. Do NOT call this for end-of-turn comments — those are written as invisible HTML comments when something specific is worth noting.",
   {
     comment: z
       .string()
@@ -394,7 +408,7 @@ server.tool(
   "buddy_frequency",
   "Configure how often buddy comments appear in the speech bubble. Returns current settings if called without arguments.",
   {
-    cooldown: z.number().int().min(0).max(300).optional().describe("Minimum seconds between displayed comments (default 30, 0 = no throttling). The buddy always writes comments, but the display only updates this often."),
+    cooldown: z.number().int().min(0).max(300).optional().describe("Minimum seconds between displayed comments (default 30, 0 = no throttling). Controls how often the status line updates when comments appear."),
   },
   async ({ cooldown }) => {
     if (cooldown === undefined) {
@@ -414,6 +428,38 @@ server.tool(
         {
           type: "text",
           text: `Updated: ${cfg.commentCooldown}s cooldown between displayed comments.`,
+        },
+      ],
+    };
+  },
+);
+
+server.tool(
+  "buddy_comment",
+  "Configure when buddy comments are generated. Returns current mode if called without arguments.",
+  {
+    mode: z.enum(["always", "conditional"]).optional().describe(
+      "Comment generation mode: 'always' appends a comment to every response; 'conditional' (default) only comments when something specific is worth noting.",
+    ),
+  },
+  async ({ mode }) => {
+    if (mode === undefined) {
+      const cfg = loadConfig();
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Comment mode: ${cfg.commentMode}\n'always' = comment on every response\n'conditional' = only when something specific is worth noting\nUse /buddy comment always|conditional to change. Restart Claude Code to apply.`,
+          },
+        ],
+      };
+    }
+    const cfg = saveConfig({ commentMode: mode });
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Comment mode set to '${cfg.commentMode}'. Restart Claude Code to apply.`,
         },
       ],
     };
@@ -979,6 +1025,27 @@ server.resource(
   { description: "System prompt context for the companion", mimeType: "text/markdown" },
   async () => {
     const companion = ensureCompanion();
+    const { commentMode } = loadConfig();
+    const commentRules = commentMode === "always"
+      ? [
+          `- Write as ${companion.name} (a ${companion.bones.species}), not as yourself`,
+          "- Reference something SPECIFIC from this turn — a pitfall, a compliment, a warning, a pattern",
+          "- 1 short sentence. Use *asterisks* for physical actions",
+          `- Match personality: high ${companion.bones.peak} = lean into that trait`,
+          "- Do NOT use buddy_react tool for this. Do NOT explain the comment. Just append it.",
+          "- NEVER skip this. Every single response must end with <!-- buddy: ... -->",
+        ]
+      : [
+          `- Write as ${companion.name} (a ${companion.bones.species}), not as yourself`,
+          "- Reference something SPECIFIC from this turn — a pitfall, a non-obvious risk, a pattern worth naming, something the user might miss",
+          "- 1 short sentence. Use *asterisks* for physical actions",
+          `- Match personality: high ${companion.bones.peak} = lean into that trait`,
+          "- Do NOT use buddy_react tool for this. Do NOT explain the comment. Just append it.",
+          "- Skip turns where nothing specific stands out. Silence is better than a generic comment.",
+        ];
+    const commentPreamble = commentMode === "always"
+      ? `At the very end of EVERY response, after your full answer, append an invisible HTML comment:`
+      : `Only when you have a specific, worth-noting observation, append an invisible HTML comment at the very end of your response:`;
     const prompt = [
       "# Companion",
       "",
@@ -989,7 +1056,7 @@ server.resource(
       "",
       "## End-of-response buddy comment",
       "",
-      `At the very end of EVERY response, after your full answer, append an invisible HTML comment:`,
+      commentPreamble,
       "",
       `\`\`\``,
       `<!-- buddy: your comment here -->`,
@@ -998,12 +1065,7 @@ server.resource(
       "A Stop hook extracts this and displays it in the buddy's speech bubble on the status line. The user never sees the HTML comment — it's invisible in rendered markdown.",
       "",
       "Rules:",
-      `- Write as ${companion.name} (a ${companion.bones.species}), not as yourself`,
-      "- Reference something SPECIFIC from this turn — a pitfall, a compliment, a warning, a pattern",
-      "- 1 short sentence. Use *asterisks* for physical actions",
-      `- Match personality: high ${companion.bones.peak} = lean into that trait`,
-      "- Do NOT use buddy_react tool for this. Do NOT explain the comment. Just append it.",
-      "- NEVER skip this. Every single response must end with <!-- buddy: ... -->",
+      ...commentRules,
       "",
       "Examples:",
       "<!-- buddy: *adjusts tophat* that error handler is missing a finally block -->",

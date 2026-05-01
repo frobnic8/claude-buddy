@@ -1,7 +1,7 @@
 ---
 name: buddy
 description: "Show, pet, or manage your coding companion. Use when the user types /buddy or mentions their companion by name."
-argument-hint: "[show|pet|stats|help|off|on|rename <name>|personality <text>|achievements|summon [slot]|save [slot]|list|dismiss <slot>|pick|frequency [seconds]|style [classic|round]|position [top|left]|rarity [on|off]|rainbow [#hex ...]|statusline [on|off]|uninstall]"
+argument-hint: "[show|pet|stats|help|off|on|rename <name>|personality <text>|achievements|summon [slot]|save [slot]|list|dismiss <slot>|pick|frequency [seconds]|comment [always|conditional]|style [classic|round]|position [top|left]|rarity [on|off]|rainbow [#hex ...]|statusline [on|off]|uninstall]"
 allowed-tools: mcp__claude_buddy__*, Bash
 ---
 
@@ -56,6 +56,9 @@ Based on `$ARGUMENTS`:
 | `pick`                   | Tell user to run `! bun run pick` from the claude-buddy directory (launches interactive TUI) |
 | `frequency`              | Call `buddy_frequency` with no args (show current)                                           |
 | `frequency <seconds>`    | Call `buddy_frequency` with cooldown=seconds                                                 |
+| `comment`                | Call `buddy_comment` with no args (show current mode)                                        |
+| `comment always`         | Call `buddy_comment` with mode="always"                                                      |
+| `comment conditional`    | Call `buddy_comment` with mode="conditional"                                                 |
 | `style`                  | Call `buddy_style` with no args (show current)                                               |
 | `style <classic\|round>` | Call `buddy_style` with style arg                                                            |
 | `position`               | Call `buddy_style` with no args (show current)                                               |

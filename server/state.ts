@@ -305,6 +305,7 @@ export function resolveUserId(): string {
 
 export interface BuddyConfig {
   commentCooldown: number;
+  commentMode: "conditional" | "always";
   reactionTTL: number;
   bubbleStyle: "classic" | "round";
   bubblePosition: "top" | "left";
@@ -318,6 +319,7 @@ export interface BuddyConfig {
 
 const DEFAULT_CONFIG: BuddyConfig = {
   commentCooldown: 30,
+  commentMode: "always",
   reactionTTL: 0,
   bubbleStyle: "classic",
   bubblePosition: "top",
